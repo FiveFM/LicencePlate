@@ -1,52 +1,42 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-
 import 'package:flutterprojects/service/api_service.dart';
-import 'package:flutterprojects/models/licence_plate.dart';
 
-void main() => runApp(const MyApp());
+import 'models/vehicle.dart';
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+void main() => runApp(MyApp());
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  late Future<List<Car>?> futureCar;
-
-  @override
-  void initState() {
-    super.initState();
-    futureCar = fetchCar();
-  }
+class MyApp extends StatelessWidget {
+  final vehicleService = VehicleService();
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Fetch Data Example',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      title: 'Vehicle List',
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Fetch Data Example'),
-        ),
-        body: Center(
-          child: FutureBuilder<List<Car>?>(
-            future: futureCar,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Text(snapshot.data![0].kenteken);
-              } else if (snapshot.hasError) {
-                return Text('${snapshot.error}');
-              }
-              // By default, show a loading spinner.
-              return const CircularProgressIndicator();
-            },
-          ),
-        ),
+          title: Text('Vehicle List'),
+        ), body: FutureBuilder<List<Vehicle>>(
+          future: vehicleService.fetchVehicles(),
+          builder: (context, snapshot) {
+            print('Building FutureBuilder widget');
+            if (snapshot.hasData) {
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(snapshot.data![index].kenteken),
+                    subtitle: Text(snapshot.data![index].voertuigsoort),
+                    // ...
+                  );
+                },
+              );
+            } else if (snapshot.hasError) {
+              return Text('${snapshot.error}');
+            }
+            // By default, show a loading spinner.
+            return CircularProgressIndicator();
+          }
+      ),
       ),
     );
   }
