@@ -1,13 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterprojects/service/api_service.dart';
 
 import 'models/vehicle.dart';
-
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   final vehicleService = VehicleService();
-
+  final textController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -15,28 +15,59 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(
           title: Text('Vehicle List'),
-        ), body: FutureBuilder<List<Vehicle>>(
-          future: vehicleService.fetchVehicles(),
-          builder: (context, snapshot) {
-            print('Building FutureBuilder widget');
-            if (snapshot.hasData) {
-              return ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(snapshot.data![index].kenteken),
-                    subtitle: Text(snapshot.data![index].voertuigsoort),
-                    // ...
-                  );
-                },
-              );
-            } else if (snapshot.hasError) {
-              return Text('${snapshot.error}');
-            }
-            // By default, show a loading spinner.
-            return CircularProgressIndicator();
-          }
+        ),
+        body: Column(
+          children: [
+            TextFormField(
+              controller: textController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Vul kenteken in',
+              ),
+              onChanged: (e) => textController.text = e,
+            ),
+            TextButton(
+              onPressed: () async {
+                var response = await vehicleService.fetchVehicles(textController.text);
+                if (response == null) return;
+
+                // Create a Vehicle object from the JSON object
+                var vehicle = Vehicle.fromJson(response);
+
+                // Navigate to the second screen and pass the vehicle data as arguments
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => SecondScreen(vehicle: vehicle),
+                  ),
+                );
+              },
+              child: Text('Wow'),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class SecondScreen extends StatelessWidget {
+  final Vehicle vehicle;
+
+  const SecondScreen({required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Second Screen'),
+      ),
+      body: Column(
+        children: [
+          Text(vehicle.kenteken),
+          Text(vehicle.voertuigsoort),
+          Text(vehicle.handelsbenaming),
+          Text(vehicle.merk),
+        ],
       ),
     );
   }
