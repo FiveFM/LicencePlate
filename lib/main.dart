@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutterprojects/service/api_service.dart';
 
@@ -19,7 +20,7 @@ class _MyCustomFormState extends State<MyCustomForm> {
   // of the TextField.
   final vehicleService = VehicleService();
   final myController = TextEditingController();
-
+  String kenteken = '';
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
@@ -31,40 +32,47 @@ class _MyCustomFormState extends State<MyCustomForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Retrieve Text Input'),
+        title: const Text('Zoek auto op kenteken'),
       ),
       body: Column(
-
         children:[
-          TextFormField(
-            validator: (value) {
-              if(value!.toUpperCase().isEmpty || !validateBoard(value.toUpperCase()) || value.length < 6 ) {
-                 return myController.text = "Voer een geldig kenteken in";
+          Padding(
+            padding: EdgeInsets.all(16),
+        child:
+          TextField(
+          controller: myController,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              labelText: 'Kenteken',
+            ),
+            onSubmitted: (text) async {
+              text.replaceAll('-', '');
+
+              if(validateBoard(text.toUpperCase())) {
+                setState(() {
+                  kenteken = text.replaceAll('-', '');
+                });
+
+                var response = await vehicleService.fetchVehicles(kenteken);
+                if (response == null) return;
+                // Create a Vehicle object from the JSON object
+                var vehicle = Vehicle.fromJson(response);
+                Navigator.push(
+                    context, MaterialPageRoute(builder: (BuildContext context) {
+                  return SecondScreen(vehicle: vehicle);
+                }));
               } else {
-                return null;
+                setState(() {
+                  kenteken = "$text is geen geldig kenteken. Voer een geldig kenteken in!";
+                });
               }
             },
-          controller: myController,
-        ),
-          TextButton(
-            // When the user presses the button, show an alert dialog containing
-            // the text that the user has entered into the text field.
-            onPressed: () async {
-
-              myController.!.validate();
-
-              var input = myController.text.toUpperCase();
-              input.replaceAll("-", "").toUpperCase();
-              var response = await vehicleService.fetchVehicles(input);
-              if (response == null) return;
-              // Create a Vehicle object from the JSON object
-              var vehicle = Vehicle.fromJson(response);
-              Navigator.push(context, MaterialPageRoute(builder: (BuildContext context){
-                return SecondScreen(vehicle: vehicle);
-              }));},
-            child: const Text("submit"),
           ),
-        ]
+          ),
+          Padding(
+          padding: EdgeInsets.all(0),
+          child: Text(kenteken)),
+        ],
       ),
     );
   }
@@ -90,24 +98,28 @@ class SecondScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Second Screen'),
+        title: const Text('Kenteken details'),
       ),
-      body: Center(
+      body: Padding(
+        padding: EdgeInsets.all(10),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(vehicle.kenteken, style: TextStyle(fontSize: 16,),),
-            Text(vehicle.voertuigsoort, style: TextStyle(fontSize: 16,),),
-            Text(vehicle.handelsbenaming, style: TextStyle(fontSize: 16,)),
-            Text(vehicle.merk, style: TextStyle(fontSize: 16,)),
-            Text(vehicle.uitvoering, style: TextStyle(fontSize: 16,)),
-            Text(vehicle.variant, style: TextStyle(fontSize: 16,)),
-            Text(vehicle.inrichting, style: TextStyle(fontSize: 16,)),
-            Text(DateTime.parse(vehicle.datum_eerste_toelating).toString(), style: TextStyle(fontSize: 16,)),
-            Text(DateTime.parse(vehicle.vervaldatum_apk).toString(), style: TextStyle(fontSize: 16,)),
+            Text('Kenteken: ${vehicle.kenteken}', style: TextStyle(fontSize: 18,),),
+            Text('Voertuigsoort ${vehicle.voertuigsoort}', style: TextStyle(fontSize: 18,),),
+            Text('Handelsbenaming: ${vehicle.handelsbenaming}', style: TextStyle(fontSize: 18,)),
+            Text('Merk: ${vehicle.merk}', style: TextStyle(fontSize: 18,)),
+            Text('Kleur: ${vehicle.eerste_kleur}', style: TextStyle(fontSize: 18,)),
+            Text('Uitvoering: ${vehicle.uitvoering}', style: TextStyle(fontSize: 18,)),
+            Text('Variant: ${vehicle.variant}', style: TextStyle(fontSize: 18,)),
+            Text('Inrichting: ${vehicle.inrichting}', style: TextStyle(fontSize: 18,)),
+            Text('Toelatings datum: ${DateTime.parse(vehicle.datum_eerste_toelating).toString()}', style: TextStyle(fontSize: 18,)),
+            Text('Vervaldatum apk: ${DateTime.parse(vehicle.vervaldatum_apk).toString()}', style: TextStyle(fontSize: 18,)),
             TextButton(
+              style: const ButtonStyle(backgroundColor: MaterialStatePropertyAll<Color>(Colors.black12), mouseCursor: MaterialStatePropertyAll<MouseCursor>(SystemMouseCursors.click)),
               onPressed: () {
                 Navigator.pop(context);
-              }, child: Text("go terug"),
+              }, child: Text("ga terug"),
             )
           ],
         ),
